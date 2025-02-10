@@ -9,6 +9,15 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from .brushnet_nodes import BrushNetLoader, BrushNet, BlendInpaint, get_files_with_extension
 from .comfyui_utils import CheckpointLoaderSimple, ControlNetLoader, ControlNetApplyAdvanced, CLIPTextEncode, KSampler, VAEDecode, GrowMask, PIDINET_Preprocessor, LineArt_Preprocessor, Color_Preprocessor
 
+torch_dtype = "float16"
+if torch.backends.mps.is_available():
+    device = "mps"
+    torch_dtype = "float32"
+elif torch.cuda.is_available():
+    device = "cuda"
+else:
+    device = "cpu"
+
 class ScribbleColorEditModel():
     def __init__(self):
         self.checkpoint_loader = CheckpointLoaderSimple()
@@ -27,9 +36,9 @@ class ScribbleColorEditModel():
         self.ckpt_name = os.path.join("SD1.5", "realisticVisionV60B1_v51VAE.safetensors")
         with torch.no_grad():
             self.model, self.clip, self.vae = self.checkpoint_loader.load_checkpoint(self.ckpt_name)
-        self.load_models('SD1.5', 'float16')
+        self.load_models('SD1.5', torch_dtype)
 
-    def load_models(self, base_model_version="SD1.5", dtype='float16'):
+    def load_models(self, base_model_version="SD1.5", dtype=torch_dtype):
         if base_model_version == "SD1.5":
             edge_controlnet_name = "control_v11p_sd15_scribble.safetensors"
             color_controlnet_name = "color_finetune.safetensors"
@@ -42,7 +51,7 @@ class ScribbleColorEditModel():
         print("self.brushnet_loader.inpaint_files: ", get_files_with_extension('inpaint'))
         self.brushnet = self.brushnet_loader.brushnet_loading(brushnet_name, dtype)[0]
     
-    def process(self, ckpt_name, image, colored_image, positive_prompt, negative_prompt, mask, add_mask, remove_mask, grow_size, stroke_as_edge, fine_edge, edge_strength, color_strength, inpaint_strength, seed, steps, cfg, sampler_name, scheduler, base_model_version='SD1.5', dtype='float16', palette_resolution=2048):
+    def process(self, ckpt_name, image, colored_image, positive_prompt, negative_prompt, mask, add_mask, remove_mask, grow_size, stroke_as_edge, fine_edge, edge_strength, color_strength, inpaint_strength, seed, steps, cfg, sampler_name, scheduler, base_model_version='SD1.5', dtype=torch_dtype, palette_resolution=2048):
         if ckpt_name != self.ckpt_name:
             self.ckpt_name = ckpt_name
             with torch.no_grad():

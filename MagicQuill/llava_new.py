@@ -19,6 +19,15 @@ from llava.constants import (
 )
 import re
 
+torch_dtype = torch.float16
+if torch.backends.mps.is_available():
+    device = "mps"
+    torch_dtype = torch.float32
+elif torch.cuda.is_available():
+    device = "cuda"
+else:
+    device = "cpu"
+
 class LLaVAModel:
     def __init__(self):
         current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -27,7 +36,7 @@ class LLaVAModel:
             model_path=model_path,
             model_base=None,
             model_name=get_model_name_from_path(model_path),
-            load_4bit=True
+            load_4bit=False if device == "mps" else True
         )
 
     def generate_description(self, images, question):
@@ -63,7 +72,7 @@ class LLaVAModel:
         input_ids = (
             tokenizer_image_token(prompt, self.tokenizer, IMAGE_TOKEN_INDEX, return_tensors="pt")
             .unsqueeze(0)
-            .cuda()
+            .to(device)
         )
 
         with torch.inference_mode():
