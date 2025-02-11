@@ -21,12 +21,20 @@ import re
 
 torch_dtype = torch.float16
 if torch.backends.mps.is_available():
+    backend = "mps"
     device = "mps"
     torch_dtype = torch.float32
 elif torch.cuda.is_available():
+    backend = "cuda"
     device = "cuda"
 else:
-    device = "cpu"
+    try:
+        import torch_directml
+        backend = "dml"
+        device = torch_directml.device()
+    except ImportError:
+        backend = "cpu"
+        device = "cpu"
 
 class LLaVAModel:
     def __init__(self):
@@ -36,7 +44,7 @@ class LLaVAModel:
             model_path=model_path,
             model_base=None,
             model_name=get_model_name_from_path(model_path),
-            load_4bit=False if device == "mps" else True
+            load_4bit=False if backend in ("mps", "dml") else True
         )
 
     def generate_description(self, images, question):

@@ -16,7 +16,11 @@ if torch.backends.mps.is_available():
 elif torch.cuda.is_available():
     device = "cuda"
 else:
-    device = "cpu"
+    try:
+        import torch_directml
+        device = torch_directml.device()
+    except ImportError:
+        device = "cpu"
 
 class ScribbleColorEditModel():
     def __init__(self):
