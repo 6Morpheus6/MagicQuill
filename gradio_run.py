@@ -308,7 +308,7 @@ with gr.Blocks(css=css) as demo:
                 scheduler = gr.Dropdown(
                     label="Scheduler",
                     choices=["normal", "karras", "exponential", "sgm_uniform", "simple", "ddim_uniform"],
-                    value='karras',
+                    value='ddim_uniform',
                     interactive=True
                 )
 
