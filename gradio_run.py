@@ -15,6 +15,7 @@ from MagicQuill import folder_paths
 from MagicQuill.llava_new import LLaVAModel
 from MagicQuill.scribble_color_edit import ScribbleColorEditModel
 import time
+import yaml
 
 AUTO_SAVE = False
 RES = 512
@@ -191,6 +192,30 @@ def auto_save_generated_image(res):
     img.save(save_path)
     print(f"Image saved to: {save_path}")
 
+def get_valid_checkpoints(checkpoints_folder: str, models_yaml_filename: str = "models.yaml") -> list:
+    
+    folder_checkpoints = folder_paths.get_filename_list(checkpoints_folder)
+    models_yaml_file = os.path.join("..", models_yaml_filename)
+    
+    try:
+        with open(models_yaml_file, "r", encoding="utf-8") as f:
+            models_data = yaml.safe_load(f)
+    except Exception as e:
+        print(f"Error while loading {models_yaml_file}: {e}")
+        return []
+
+    if isinstance(models_data, dict) and "checkpoints" in models_data:
+        yaml_checkpoints = models_data["checkpoints"]
+    else:
+        print("models.yaml does not have the expected format. A 'checkpoints' key is expected.")
+        yaml_checkpoints = []
+ 
+    valid_checkpoints = [
+        ckpt for ckpt in folder_checkpoints 
+        if os.path.basename(ckpt) in yaml_checkpoints
+    ]
+    return valid_checkpoints
+
 css = '''
 .row {
     width: 90%;
@@ -210,10 +235,12 @@ with gr.Blocks(css=css) as demo:
             btn = gr.Button("Run", variant="primary")
         with gr.Column():
             with gr.Accordion("parameters", open=False):
+                valid_ckpts = get_valid_checkpoints("checkpoints", "models.yaml")
                 ckpt_name = gr.Dropdown(
                     label="Base Model Name",
-                    choices=folder_paths.get_filename_list("checkpoints"),
-                    value=os.path.join('SD1.5', 'realisticVisionV60B1_v51VAE.safetensors'),
+                    info="(Use existing or downloaded SD1.5 models by adding them to models.yaml)",
+                    choices=valid_ckpts,
+                    value=valid_ckpts[0] if valid_ckpts else None,
                     interactive=True
                 )
                 auto_save_checkbox = gr.Checkbox(
