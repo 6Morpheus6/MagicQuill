@@ -218,7 +218,7 @@ def get_valid_checkpoints(checkpoints_folder: str, models_yaml_filename: str = "
 
 css = '''
 .row {
-    width: 90%;
+    width: 100%;
     margin: auto;
 }
 footer {
